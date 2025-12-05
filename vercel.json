@@ -1,9 +1,7 @@
 {
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs"
 }
-
 
 
