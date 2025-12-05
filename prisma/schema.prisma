@@ -6,9 +6,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
- connect_timeout = 30
-  pool_timeout    = 30
-  pool_size       = 5 // 增大连接池
 }
 
 model Food {
