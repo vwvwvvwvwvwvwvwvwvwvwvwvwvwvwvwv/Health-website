@@ -60,3 +60,4 @@ vercel.json 中配置了构建命令，包括 Prisma Client 生成和数据库�
 
 没有使用全局状态管理库，因为数据流相对简单。主页的数据通过 Server Component 获取，客户端组件只处理用户交互和本地状态更新。
 
+
