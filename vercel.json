@@ -3,7 +3,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["sfo1"]
+  "regions": ["hkg1"]
 }
 
 
