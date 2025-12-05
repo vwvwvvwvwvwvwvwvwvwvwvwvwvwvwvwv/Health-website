@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Food {
+  id       Int    @id @default(autoincrement())
+  name     String
+  emoji    String
+  calories Int
+  logs     Log[]
+}
+
+model Exercise {
+  id    Int    @id @default(autoincrement())
+  name  String
+  emoji String
+  met   Float
+  logs  Log[]
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  type      String
+  amount    Int
+  val       Int
+  foodId    Int?
+  food      Food?     @relation(fields: [foodId], references: [id])
+  exerciseId Int?
+  exercise  Exercise? @relation(fields: [exerciseId], references: [id])
+}
+
+model WaterLog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  amount    Int
+}
+
+model UserGoal {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  dailyIntake Int      @default(2000)
+  dailyBurn   Int      @default(500)
+  dailyWater  Int      @default(8)
+}
