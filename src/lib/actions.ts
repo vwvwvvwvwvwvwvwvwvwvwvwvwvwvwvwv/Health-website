@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_noStore } from 'next/cache'
 
 export async function getOptions() {
   const foods = await prisma.food.findMany()
@@ -10,38 +10,45 @@ export async function getOptions() {
 }
 
 export async function getTodayStats() {
-  const now = new Date()
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  unstable_noStore();
+  
+  try {
+    const now = new Date()
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-  const logs = await prisma.log.findMany({
-    where: {
-      createdAt: { gte: startOfDay }
-    },
-    include: { 
-      food: true, 
-      exercise: true 
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+    const logs = await prisma.log.findMany({
+      where: {
+        createdAt: { gte: startOfDay }
+      },
+      include: { 
+        food: true, 
+        exercise: true 
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-  const waterLogs = await prisma.waterLog.findMany({
-    where: {
-      createdAt: { gte: startOfDay }
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+    const waterLogs = await prisma.waterLog.findMany({
+      where: {
+        createdAt: { gte: startOfDay }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-  const intake = logs
-    .filter(l => l.type === 'intake')
-    .reduce((sum, item) => sum + item.val, 0)
+    const intake = logs
+      .filter(l => l.type === 'intake')
+      .reduce((sum, item) => sum + item.val, 0)
 
-  const burn = logs
-    .filter(l => l.type === 'burn')
-    .reduce((sum, item) => sum + item.val, 0)
+    const burn = logs
+      .filter(l => l.type === 'burn')
+      .reduce((sum, item) => sum + item.val, 0)
 
-  const water = waterLogs.reduce((sum, item) => sum + item.amount, 0)
+    const water = waterLogs.reduce((sum, item) => sum + item.amount, 0)
 
-  return { intake, burn, water, logs, waterLogs }
+    return { intake, burn, water, logs, waterLogs }
+  } catch (error) {
+    console.error('Database error in getTodayStats:', error);
+    return { intake: 0, burn: 0, water: 0, logs: [], waterLogs: [] };
+  }
 }
 
 export async function submitLog(data: {
@@ -122,12 +129,15 @@ export async function getTodayWater() {
 }
 
 export async function getWeeklyStats() {
-  const now = new Date()
-  const startOfWeek = new Date(now)
-  startOfWeek.setDate(now.getDate() - now.getDay())
-  startOfWeek.setHours(0, 0, 0, 0)
+  unstable_noStore();
+  
+  try {
+    const now = new Date()
+    const startOfWeek = new Date(now)
+    startOfWeek.setDate(now.getDate() - now.getDay())
+    startOfWeek.setHours(0, 0, 0, 0)
 
-  const logs = await prisma.log.findMany({
+    const logs = await prisma.log.findMany({
     where: {
       createdAt: { gte: startOfWeek }
     },
@@ -202,14 +212,32 @@ export async function getWeeklyStats() {
       water: avgWater
     }
   }
+  } catch (error) {
+    console.error('Database error in getWeeklyStats:', error);
+    return {
+      dailyStats: Array.from({ length: 7 }, (_, i) => ({
+        date: new Date(),
+        dayName: ['日', '一', '二', '三', '四', '五', '六'][i],
+        intake: 0,
+        burn: 0,
+        water: 0,
+        net: 0
+      })),
+      totals: { intake: 0, burn: 0, water: 0, net: 0 },
+      averages: { intake: 0, burn: 0, water: 0 }
+    };
+  }
 }
 
 export async function getMonthlyStats() {
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  unstable_noStore();
+  
+  try {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    startOfMonth.setHours(0, 0, 0, 0)
 
-  const logs = await prisma.log.findMany({
+    const logs = await prisma.log.findMany({
     where: {
       createdAt: { gte: startOfMonth }
     },
@@ -299,10 +327,30 @@ export async function getMonthlyStats() {
       water: avgWater
     }
   }
+  } catch (error) {
+    console.error('Database error in getMonthlyStats:', error);
+    const daysInMonth = new Date().getDate();
+    return {
+      dailyStats: Array.from({ length: daysInMonth }, (_, i) => ({
+        date: new Date(),
+        day: i + 1,
+        intake: 0,
+        burn: 0,
+        water: 0,
+        net: 0
+      })),
+      weeklyBreakdown: [],
+      totals: { intake: 0, burn: 0, water: 0, net: 0 },
+      averages: { intake: 0, burn: 0, water: 0 }
+    };
+  }
 }
 
 export async function getUserGoal() {
-  let goal = await prisma.userGoal.findFirst({
+  unstable_noStore();
+  
+  try {
+    let goal = await prisma.userGoal.findFirst({
     orderBy: { createdAt: 'desc' }
   })
 
@@ -317,6 +365,17 @@ export async function getUserGoal() {
   }
 
   return goal
+  } catch (error) {
+    console.error('Database error in getUserGoal:', error);
+    return {
+      id: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      dailyIntake: 2000,
+      dailyBurn: 500,
+      dailyWater: 8
+    };
+  }
 }
 
 export async function updateUserGoal(data: {
